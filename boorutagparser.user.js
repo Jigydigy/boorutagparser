@@ -28,6 +28,9 @@
 // @include      *rule34hentai.net/post/*
 // @include      *tbib.org/index.php?page=post*
 // @include      *yande.re/post/*
+// @include     /^https?://derpiboo\.ru/[1-9]+$/
+// @include     /^https?://derpibooru\.org/[1-9]+$/
+// @include     /^https?://trixiebooru\.org/[1-9]+$/
 
 // nhentai
 // @include      *nhentai.net/g/*
@@ -63,8 +66,12 @@ function replaceAll(str, originalstr, newstr)
     return str.split(originalstr).join(newstr);
 }
 
-function insertTags(tags, selector, prefix)
+function insertTags(tags, selector, prefix, stripns)
 {
+    if (typeof stripns === "undefined") {
+        stripns = false;
+    }
+
     var elements = document.querySelectorAll(selector);
 
     for (var i=0; i < elements.length; i++)
@@ -76,6 +83,10 @@ function insertTags(tags, selector, prefix)
             text = replaceAll(text, '_', ' ');
             text = replaceAll(text, '&gt;', '>');
             text = replaceAll(text, '&lt;', '<');
+
+            if (stripns) {
+                text = text.match(".*?:(.*)")[1];
+            }
 
             tags[tags.length] = prefix+text;
         }
@@ -114,13 +125,13 @@ function copyNHentaiTags(noRating, callback)
 {
     // nhentai has a json output we can use.
     // Which is nice because the tags are available even if viewing an individual file.
-    
+
     var id = window.location.href.match('/g/(\\d+)/*')[1];
     if (!id)
         return;
-    
+
     id = Number(id);
-    
+
     fetch('http://nhentai.net/g/' + id + '/json').then(function(response) {
         return response.json();
     }).then(function(json) {
@@ -155,7 +166,7 @@ function copyNHentaiTags(noRating, callback)
             tags[tags.length] = 'gallery:' + json.id;
 
         copyTagsToClipboard(tags);
-        
+
         if (callback)
             callback(tags);
     }).catch(function(err) {
@@ -188,6 +199,15 @@ function copyBooruTags(noRating)
     insertTags(tags, 'li.tag-type-species > a', 'species:');
     insertTags(tags, 'li.tag-type-faults > a', 'fault:');
 
+    // derpibooru-like
+    insertTags(tags, '.tag-list .tag.tag-ns-artist > a', 'creator:', true);  // stripns otherwise double namespace
+    insertTags(tags, '.tag-list .tag.tag-ns-oc > a', 'character:', true);
+    insertTags(tags, '.tag-list .tag.tag-system > a', 'rating:');
+    insertTags(tags, '.tag-list [class="dropdown tag"] > a', ''); // generic tags on derpibooru do not have a "namespace" class of their own, this seems to be the best way to match generic tags
+    insertTags(tags, '.tag-list [class="dropdown tag tag-user-watched"] > a', ''); //also grabs tags users have watched, the generic tag code doesn't grab these
+    insertTags(tags, '.tag-list [class="dropdown tag tag-user-hidden"] > a', ''); //also grabs tags users have hidden, the generic tag code doesn't grab these
+    insertTags(tags, '.tag-list [class="dropdown tag tag-user-spoilered"] > a', ''); //also grabs tags users have set to spoiler, the generic tag code doesn't grab these
+
     // booru.org-like
     insertTags(tags, '#tag_list li a', '');
 
@@ -210,7 +230,7 @@ function copyBooruTags(noRating)
     }
 
     copyTagsToClipboard(tags);
-    
+
     return tags;
 }
 
@@ -259,14 +279,14 @@ function copyI2VTags(confidenceRequired, noGeneral, noRating)
         insertI2VTags(tags, 'table#rating_root tr', 'rating:', confidenceRequired);
 
     copyTagsToClipboard(tags);
-    
+
     return tags;
 }
 
 function doCopyAll(callback)
 {
     control.style.opacity = '1';
-    
+
     if (window.location.href.indexOf('nhentai.net') >= 0)
         copyNHentaiTags(null, callback);
     else if (window.location.href.indexOf('illustration2vec.net') >= 0)
@@ -306,7 +326,7 @@ function makeDownloadRequest(href, tags)
 {
     if (!tags)
         tags = [];
-    
+
     GM_xmlhttpRequest({
         'method':'POST',
         'url':'http://localhost:14007/download?' + href,
@@ -322,9 +342,9 @@ function doDownload()
     var a = document.querySelector('a#highres, a[itemprop="contentSize"], a.original-file-unchanged, li > a[href*="/images/"], section#image-container > a > img, img#image, img[src*="/_images/"], a[href*="/img/download/"], form[action*="/_images/"], source[src]');
     if (!a)
         return;
-    
+
     var href = a.src || a.href;
-    
+
     doCopyAll(function(tags) { makeDownloadRequest(href, tags); } );
 }
 
