@@ -22,6 +22,7 @@
 // @include      *idol.sankakucomplex.com/post/show/*
 // @include      *idol.sankakucomplex.com/?tags=*
 // @include      *e621.net/post/*
+// @include      *behoimi.org/post/*
 // @include      *konachan.com/post/*
 // @include      *shimmie.katawa-shoujo.com/post/*
 // @include      *rule34.paheal.net/post/*
@@ -198,6 +199,7 @@ function copyBooruTags(noRating)
     insertTags(tags, 'li.tag-type-meta > a', 'meta:');
     insertTags(tags, 'li.tag-type-species > a', 'species:');
     insertTags(tags, 'li.tag-type-faults > a', 'fault:');
+    insertTags(tags, 'li.tag-type-model > a', 'model:');
 
     // derpibooru-like
     insertTags(tags, '.tag-list .tag.tag-ns-artist > a', 'creator:', true);  // stripns otherwise double namespace
@@ -329,7 +331,7 @@ function makeDownloadRequest(href, tags)
 
     GM_xmlhttpRequest({
         'method':'POST',
-        'url':'http://localhost:14007/download?' + href,
+        'url':'http://localhost:14007/download?url=' + href + '&referer=' + window.location.href,
         'data':tags.join(','),
         'anonymous':true,
         'timeout':12500,
