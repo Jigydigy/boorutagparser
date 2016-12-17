@@ -133,7 +133,7 @@ function copyNHentaiTags(noRating, callback)
 
     id = Number(id);
 
-    fetch('http://nhentai.net/g/' + id + '/json').then(function(response) {
+    fetch('https://nhentai.net/api/gallery/' + id).then(function(response) {
         return response.json();
     }).then(function(json) {
         var tags = [];
@@ -142,8 +142,8 @@ function copyNHentaiTags(noRating, callback)
         {
             for (var i=0; i < json.tags.length; i++)
             {
-                var tagtype = json.tags[i][1];
-                var tag = json.tags[i][2];
+                var tagtype = json.tags[i].type;
+                var tag = json.tags[i].name;
 
                 // maintain schema consistency
                 if (tagtype == 'group')
